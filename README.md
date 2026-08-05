@@ -170,12 +170,49 @@ backend verifies once and turns into its own session cookie.
 
 ## Using the MCP server
 
-The MCP server runs locally over stdio and is meant to be launched by an MCP
-client (Claude Code, Claude Desktop), not by you directly. It shares the same
-Postgres database as the web app, so it needs to know *which* signed-up user's
-data it's allowed to touch - set via the `MCP_USER_EMAIL` environment
-variable, which must match a Google account that has already signed into the
-web app at least once (that's what creates the `users` row).
+There are two ways to connect an AI client - local (stdio) against your own
+Postgres, or remote (HTTPS) against a deployed instance using a personal
+token. Both call the exact same tools/resources over the same service layer.
+
+### Remote (HTTPS) - any signed-up user, no server config
+
+The deployed app exposes the MCP server at `POST /mcp`, authenticated per
+request with a personal access token instead of a shared secret - so anyone
+who signs up gets their own token and only ever sees their own data.
+
+1. Sign in to the web app, click **MCP access** in the navbar, and generate a
+   token (shown once - copy it).
+2. Register it with your client:
+
+   ```bash
+   claude mcp add --transport http task-manager https://<your-deployment>/mcp \
+     --header "Authorization: Bearer <token>"
+   ```
+
+   **Claude Desktop** - add to `claude_desktop_config.json`:
+
+   ```json
+   {
+     "mcpServers": {
+       "task-manager": {
+         "type": "http",
+         "url": "https://<your-deployment>/mcp",
+         "headers": { "Authorization": "Bearer <token>" }
+       }
+     }
+   }
+   ```
+
+Revoke a token any time from the same **MCP access** panel.
+
+### Local (stdio) - your own machine, local Postgres
+
+The stdio server (`server/src/mcp/server.js`) is meant to be launched by an
+MCP client directly, not run by you. It shares your local Postgres, so it
+needs to know *which* signed-up user's data to touch - set via the
+`MCP_USER_EMAIL` environment variable, which must match a Google account
+that has already signed into the web app at least once (that's what creates
+the `users` row).
 
 **Claude Desktop** - add to `claude_desktop_config.json`:
 
@@ -297,6 +334,6 @@ static site or extra configuration to wire together.
 | `PORT` | server | Port Express listens on (defaults to 4000; Render sets this itself). |
 | `JWT_SECRET` | server | Random string used to sign session cookies. |
 | `GOOGLE_CLIENT_ID` | server | Google OAuth Client ID, used to verify sign-in tokens. |
-| `MCP_USER_EMAIL` | server (MCP only) | Which user's data the local MCP server operates on. |
+| `MCP_USER_EMAIL` | server (local stdio MCP only) | Which user's data the local MCP server operates on. Not used by the remote `/mcp` HTTP route - that authenticates per request with a personal token instead (see "Using the MCP server"). |
 | `NODE_ENV` | server | Set to `production` to make Express serve the built client (done automatically in Docker/Render). |
 | `VITE_GOOGLE_CLIENT_ID` | client | Same Google OAuth Client ID, used to render the sign-in button. |

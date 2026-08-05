@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useApp } from '../context/AppContext.jsx';
+import McpAccessModal from './McpAccessModal.jsx';
 
 export default function Navbar() {
   const { user, demoMode, signInWithGoogle, signOut, exitDemo } = useApp();
+  const [mcpOpen, setMcpOpen] = useState(false);
 
   return (
     <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3">
@@ -21,11 +24,18 @@ export default function Navbar() {
           <>
             <span className="text-sm font-medium text-slate-700">{user.name}</span>
             <button
+              onClick={() => setMcpOpen(true)}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+            >
+              MCP access
+            </button>
+            <button
               onClick={signOut}
               className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
             >
               Sign out
             </button>
+            {mcpOpen && <McpAccessModal onClose={() => setMcpOpen(false)} />}
           </>
         ) : (
           <>

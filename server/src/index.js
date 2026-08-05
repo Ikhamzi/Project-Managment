@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import projectRoutes from './routes/projects.js';
 import taskRoutes from './routes/tasks.js';
+import mcpTokenRoutes from './routes/mcpTokens.js';
 import { requireAuth } from './auth.js';
 import { runMigrations } from './runMigrations.js';
 import { mcpRouter } from './mcp/httpServer.js';
@@ -26,6 +27,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', requireAuth, projectRoutes);
 app.use('/api/tasks', requireAuth, taskRoutes);
+app.use('/api/mcp-tokens', requireAuth, mcpTokenRoutes);
 app.use('/mcp', mcpRouter);
 
 // In production the client is built into client/dist and served by this

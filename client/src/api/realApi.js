@@ -28,4 +28,8 @@ export const realApi = {
   createTask: (task) => request('/tasks', { method: 'POST', body: JSON.stringify(task) }),
   updateTask: (id, fields) => request(`/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(fields) }),
   deleteTask: (id) => request(`/tasks/${id}`, { method: 'DELETE' }),
+
+  listMcpTokens: () => request('/mcp-tokens'),
+  createMcpToken: (label) => request('/mcp-tokens', { method: 'POST', body: JSON.stringify({ label }) }),
+  revokeMcpToken: (id) => request(`/mcp-tokens/${id}`, { method: 'DELETE' }),
 };

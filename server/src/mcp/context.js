@@ -1,19 +1,31 @@
-// The MCP server runs locally over stdio (e.g. launched by Claude Code),
-// completely separate from the web app's cookie-based session. It has
-// no browser to hold a cookie in, so instead it's told up front, via the
-// MCP_USER_EMAIL environment variable in the MCP client config, which
-// signed-up user's data it's allowed to touch. That email must match a
-// user who has already signed in at least once through the web app's
-// Google sign-in (so the users row exists).
+// Two ways the MCP server learns which user's projects/tasks it's
+// allowed to touch, depending on how it's running:
+//
+// - Local, over stdio (launched by Claude Code/Desktop): there's no
+//   browser and no per-request identity, so it's told once, up front,
+//   via the MCP_USER_EMAIL environment variable in the MCP client
+//   config. That email must match a user who has already signed in at
+//   least once through the web app's Google sign-in.
+// - Remote, over HTTP (POST /mcp): each request carries its own bearer
+//   token (a personal access token generated from the web app), and
+//   httpServer.js resolves that to a user id per request. Since a single
+//   server process serves many users concurrently there, the id is
+//   threaded through AsyncLocalStorage instead of a module-level cache.
+import { AsyncLocalStorage } from 'node:async_hooks';
 import dotenv from 'dotenv';
 import { getUserByEmail } from '../services/userService.js';
 
 dotenv.config();
 
-let cachedUserId = null;
+export const httpUserContext = new AsyncLocalStorage();
+
+let cachedStdioUserId = null;
 
 export async function resolveUserId() {
-  if (cachedUserId) return cachedUserId;
+  const httpUserId = httpUserContext.getStore();
+  if (httpUserId) return httpUserId;
+
+  if (cachedStdioUserId) return cachedStdioUserId;
 
   const email = process.env.MCP_USER_EMAIL;
   if (!email) {
@@ -29,6 +41,6 @@ export async function resolveUserId() {
     );
   }
 
-  cachedUserId = user.id;
-  return cachedUserId;
+  cachedStdioUserId = user.id;
+  return cachedStdioUserId;
 }
