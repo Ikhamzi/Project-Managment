@@ -33,3 +33,7 @@ services:
         sync: false
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false
+      - key: MCP_API_TOKEN
+        generateValue: true
+      - key: MCP_USER_EMAIL
+        sync: false

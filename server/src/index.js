@@ -10,6 +10,7 @@ import projectRoutes from './routes/projects.js';
 import taskRoutes from './routes/tasks.js';
 import { requireAuth } from './auth.js';
 import { runMigrations } from './runMigrations.js';
+import { mcpRouter } from './mcp/httpServer.js';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', requireAuth, projectRoutes);
 app.use('/api/tasks', requireAuth, taskRoutes);
+app.use('/mcp', mcpRouter);
 
 // In production the client is built into client/dist and served by this
 // same Express process - one service to deploy, no CORS to configure.
