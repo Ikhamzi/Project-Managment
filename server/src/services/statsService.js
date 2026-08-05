@@ -65,29 +65,31 @@ export async function getWeeklyStats(userId, { week, weeksBack = 1 } = {}) {
     weeks.push(emptyWeek(start));
   }
 
-  if (teamIds.length === 0) {
-    return { weeks };
-  }
-
   // DISTINCT ON (ticket, week) keeps only the most recent transition
   // into 'done' per ticket per week, so a ticket toggled done/reopened
-  // twice in the same week is counted once for that week.
-  const { rows } = await query(
-    `SELECT DISTINCT ON (h.ticket_id, date_trunc('week', h.changed_at, 'UTC'))
-       date_trunc('week', h.changed_at, 'UTC') AS week_start,
-       t.team_id, tm.name AS team_name,
-       t.assignee_id, au.name AS assignee_name,
-       t.points
-     FROM ticket_status_history h
-     JOIN tasks t ON t.id = h.ticket_id
-     JOIN teams tm ON tm.id = t.team_id
-     LEFT JOIN users au ON au.id = t.assignee_id
-     WHERE h.to_status = 'done'
-       AND h.changed_at >= $1 AND h.changed_at < $2
-       AND t.team_id = ANY($3::int[])
-     ORDER BY h.ticket_id, date_trunc('week', h.changed_at, 'UTC'), h.changed_at DESC`,
-    [rangeStart.toISOString(), rangeEnd.toISOString(), teamIds]
-  );
+  // twice in the same week is counted once for that week. Skipped
+  // entirely (rather than passed an empty team_id array to Postgres)
+  // when the user isn't on any team yet - the loop below then still
+  // runs, so `weeks` comes back with the same [] shape either way.
+  let rows = [];
+  if (teamIds.length > 0) {
+    ({ rows } = await query(
+      `SELECT DISTINCT ON (h.ticket_id, date_trunc('week', h.changed_at, 'UTC'))
+         date_trunc('week', h.changed_at, 'UTC') AS week_start,
+         t.team_id, tm.name AS team_name,
+         t.assignee_id, au.name AS assignee_name,
+         t.points
+       FROM ticket_status_history h
+       JOIN tasks t ON t.id = h.ticket_id
+       JOIN teams tm ON tm.id = t.team_id
+       LEFT JOIN users au ON au.id = t.assignee_id
+       WHERE h.to_status = 'done'
+         AND h.changed_at >= $1 AND h.changed_at < $2
+         AND t.team_id = ANY($3::int[])
+       ORDER BY h.ticket_id, date_trunc('week', h.changed_at, 'UTC'), h.changed_at DESC`,
+      [rangeStart.toISOString(), rangeEnd.toISOString(), teamIds]
+    ));
+  }
 
   const weekByKey = new Map(weeks.map((w) => [w.weekStart, w]));
 
