@@ -80,10 +80,10 @@ stored, and shaped identically.
   `list_tasks`, `update_task`, `delete_task`, and the project equivalents)
   and resources (`task://projects`, `task://project/{id}`, `task://overdue`)
   for a local AI client to use.
-- **Teams and tickets** (API/MCP only - see "Teams and tickets" below and
-  the follow-up note): a Linear-style layer on top of projects/tasks -
-  teams, team-scoped tickets with points and a six-stage status workflow,
-  comments, and weekly completion stats.
+- **Teams and tickets**: a Linear-style layer on top of projects/tasks - teams,
+  a team-scoped ticket board with points and a six-stage status workflow,
+  markdown descriptions and comments, and a weekly stats dashboard with a
+  velocity chart. Full React UI (below), REST API, and MCP tools.
 
 ## Teams and tickets
 
@@ -94,27 +94,29 @@ works exactly as before.
 - **Teams** group users. Every user can belong to multiple teams; every
   project optionally belongs to one (required for *new* projects going
   forward - pre-existing projects keep working without one, they just
-  can't have tickets created on them until assigned to a team).
+  can't have tickets created on them until assigned to a team). The sidebar's
+  team switcher lets you create a team, switch between yours, and manage
+  members (add by email) from a "👥" button next to it.
 - **Tickets** are the same underlying rows as tasks (see
   `migrations/002_teams_tickets.sql` for why the table wasn't renamed),
   extended with `team_id`, `assignee_id` (must be a member of the
   ticket's team; unassigned is valid), and `points` (one of `1, 2, 3, 5,
-  8, 13`). Status is a six-stage workflow: `backlog`, `todo`,
-  `in_progress`, `in_review`, `done`, `cancelled`.
-- **Comments** are a flat, markdown list per ticket.
-- **Weekly stats** (`get_weekly_stats` / `GET /api/stats/weekly`) report
-  tickets and points completed per week, broken down by team and
-  assignee, plus a velocity trend across however many weeks you ask for.
-  "Completed" is driven by a `ticket_status_history` table recording
-  every status transition, not the ticket's current status - so a
-  ticket marked done and later reopened still counts as completed in
-  whichever week it was (most recently) marked done, even after later
-  status changes.
-
-**Follow-up (not built here):** there's no React UI yet for any of this -
-no team switcher, ticket board, comment thread, or stats dashboard. Every
-operation is reachable via the REST API and MCP tools below; wiring up
-`client/src` screens for them is separate follow-up work.
+  8, 13`). Status is a six-stage workflow shown as a 6-column kanban
+  board: `backlog`, `todo`, `in_progress`, `in_review`, `done`, `cancelled`.
+  Click a ticket to open its detail panel - inline-editable fields, a
+  rendered-markdown description, and a comment thread.
+- **Comments** are a flat, markdown list per ticket, rendered with
+  `marked` + sanitized with `DOMPurify` before ever reaching the DOM.
+- **Weekly stats** (`/stats` page, `get_weekly_stats` tool, or
+  `GET /api/stats/weekly`) report tickets and points completed per week,
+  broken down by team and assignee, plus a velocity chart across however
+  many weeks you ask for (the UI shows the last 6). "Completed" is driven
+  by a `ticket_status_history` table recording every status transition,
+  not the ticket's current status - so a ticket marked done and later
+  reopened still counts as completed in whichever week it was (most
+  recently) marked done, even after later status changes.
+- **Try Demo** covers all of this too - the seeded demo team, teammate,
+  projects, tickets, and stats history all live in `client/src/api/demoApi.js`.
 
 ## Project structure
 
@@ -124,8 +126,10 @@ operation is reachable via the REST API and MCP tools below; wiring up
 │   └── src/
 │       ├── api/             realApi.js (fetch) and demoApi.js (in-memory)
 │       ├── context/         AppContext - auth state + demo mode + api switch
-│       ├── components/      Navbar, ProjectSidebar, TaskBoard, TaskCard, ...
-│       └── pages/           Welcome (signed-out), Dashboard (signed-in/demo)
+│       ├── lib/             markdown.js (marked + DOMPurify), ticketMeta.js (status/points/priority)
+│       ├── components/      Navbar, ProjectSidebar (team switcher), TicketBoard, TicketCard,
+│       │                    TicketDetail, NewTicketForm, TeamMembersModal, VelocityChart, ...
+│       └── pages/           Welcome (signed-out), Dashboard (board), StatsPage
 ├── server/                  Express REST API + MCP server
 │   └── src/
 │       ├── services/        Shared business logic (projectService, taskService, teamService,

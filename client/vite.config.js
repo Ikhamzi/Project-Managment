@@ -11,7 +11,7 @@ export default defineConfig({
       // During `npm run dev`, forward API calls to the Express server
       // so the browser only ever talks to one origin (avoids CORS).
       '/api': {
-        target: 'http://localhost:4000',
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:4000',
         changeOrigin: true,
       },
     },
