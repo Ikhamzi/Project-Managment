@@ -3,6 +3,7 @@ import { useApp } from './context/AppContext.jsx';
 import Navbar from './components/Navbar.jsx';
 import Welcome from './pages/Welcome.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import StatsPage from './pages/StatsPage.jsx';
 import McpAuthorize from './pages/McpAuthorize.jsx';
 
 export default function App() {
@@ -22,7 +23,14 @@ export default function App() {
             ) : (
               <>
                 <Navbar />
-                {Boolean(user) || demoMode ? <Dashboard /> : <Welcome />}
+                {Boolean(user) || demoMode ? (
+                  <Routes>
+                    <Route path="/stats" element={<StatsPage />} />
+                    <Route path="*" element={<Dashboard />} />
+                  </Routes>
+                ) : (
+                  <Welcome />
+                )}
               </>
             )
           }
