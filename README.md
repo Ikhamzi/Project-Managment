@@ -80,6 +80,41 @@ stored, and shaped identically.
   `list_tasks`, `update_task`, `delete_task`, and the project equivalents)
   and resources (`task://projects`, `task://project/{id}`, `task://overdue`)
   for a local AI client to use.
+- **Teams and tickets** (API/MCP only - see "Teams and tickets" below and
+  the follow-up note): a Linear-style layer on top of projects/tasks -
+  teams, team-scoped tickets with points and a six-stage status workflow,
+  comments, and weekly completion stats.
+
+## Teams and tickets
+
+Built on top of the original projects/tasks foundation, not instead of it -
+every existing route, service function and MCP tool listed above still
+works exactly as before.
+
+- **Teams** group users. Every user can belong to multiple teams; every
+  project optionally belongs to one (required for *new* projects going
+  forward - pre-existing projects keep working without one, they just
+  can't have tickets created on them until assigned to a team).
+- **Tickets** are the same underlying rows as tasks (see
+  `migrations/002_teams_tickets.sql` for why the table wasn't renamed),
+  extended with `team_id`, `assignee_id` (must be a member of the
+  ticket's team; unassigned is valid), and `points` (one of `1, 2, 3, 5,
+  8, 13`). Status is a six-stage workflow: `backlog`, `todo`,
+  `in_progress`, `in_review`, `done`, `cancelled`.
+- **Comments** are a flat, markdown list per ticket.
+- **Weekly stats** (`get_weekly_stats` / `GET /api/stats/weekly`) report
+  tickets and points completed per week, broken down by team and
+  assignee, plus a velocity trend across however many weeks you ask for.
+  "Completed" is driven by a `ticket_status_history` table recording
+  every status transition, not the ticket's current status - so a
+  ticket marked done and later reopened still counts as completed in
+  whichever week it was (most recently) marked done, even after later
+  status changes.
+
+**Follow-up (not built here):** there's no React UI yet for any of this -
+no team switcher, ticket board, comment thread, or stats dashboard. Every
+operation is reachable via the REST API and MCP tools below; wiring up
+`client/src` screens for them is separate follow-up work.
 
 ## Project structure
 
@@ -93,13 +128,14 @@ stored, and shaped identically.
 │       └── pages/           Welcome (signed-out), Dashboard (signed-in/demo)
 ├── server/                  Express REST API + MCP server
 │   └── src/
-│       ├── services/        Shared business logic (projectService, taskService, userService)
+│       ├── services/        Shared business logic (projectService, taskService, teamService,
+│       │                    ticketService, commentService, statsService, userService)
 │       ├── routes/          Express routes - thin wrappers over services/
 │       ├── mcp/             MCP server - tools.js, resources.js - same services/
 │       ├── db.js            Postgres connection pool
 │       ├── auth.js          JWT session helpers + requireAuth middleware
 │       └── index.js         Express app entry point
-│   └── migrations/001_init.sql
+│   └── migrations/          001_init.sql, 002_teams_tickets.sql - applied in order, every boot
 ├── docker-compose.yml       Postgres only, for local development
 ├── Dockerfile                Multi-stage build: client -> static files served by server
 └── render.yaml               Render Blueprint (one web service + one Postgres database)
@@ -253,9 +289,9 @@ by `/api/auth/google` - the React app handles this automatically.
 | GET | `/api/auth/me` | Returns the signed-in user, or 401. |
 | POST | `/api/auth/logout` | Clears the session cookie. |
 | GET | `/api/projects` | List your projects. |
-| POST | `/api/projects` | Body `{ name, description? }`. |
+| POST | `/api/projects` | Body `{ name, teamId, description? }`. |
 | GET | `/api/projects/:id` | Get one project. |
-| PATCH | `/api/projects/:id` | Body any of `{ name, description }`. |
+| PATCH | `/api/projects/:id` | Body any of `{ name, description, teamId }`. |
 | DELETE | `/api/projects/:id` | Deletes the project and its tasks. |
 | GET | `/api/tasks?projectId=&status=` | List tasks, optionally filtered. |
 | GET | `/api/tasks/overdue` | Tasks past their due date that aren't `done`. |
@@ -263,6 +299,18 @@ by `/api/auth/google` - the React app handles this automatically.
 | GET | `/api/tasks/:id` | Get one task. |
 | PATCH | `/api/tasks/:id` | Body any updatable task field. |
 | DELETE | `/api/tasks/:id` | Deletes the task. |
+| GET | `/api/teams` | List teams you're a member of. |
+| POST | `/api/teams` | Body `{ name }`. Creates the team and adds you as its first member. |
+| GET | `/api/teams/:id/members` | List a team's members. |
+| POST | `/api/teams/:id/members` | Body `{ email }`. Adds an existing user to the team. |
+| GET | `/api/tickets?projectId=&teamId=&assigneeId=&status=` | List tickets across your teams, optionally filtered. |
+| POST | `/api/tickets` | Body `{ projectId, title, description?, status?, priority?, points?, assigneeId? }`. |
+| GET | `/api/tickets/:id` | Get one ticket. |
+| PATCH | `/api/tickets/:id` | Body any updatable ticket field. |
+| DELETE | `/api/tickets/:id` | Deletes the ticket. |
+| GET | `/api/tickets/:id/comments` | List a ticket's comments, oldest first. |
+| POST | `/api/tickets/:id/comments` | Body `{ body }` (markdown). |
+| GET | `/api/stats/weekly?week=&weeksBack=` | Tickets/points completed per week, by team and assignee. See "Teams and tickets" above. |
 
 ## MCP tools & resources reference
 
@@ -278,6 +326,16 @@ by `/api/auth/google` - the React app handles this automatically.
 | `create_task` | `projectId`, `title`, `description?`, `priority?`, `dueDate?`, `assignee?` |
 | `update_task` | `taskId`, plus any field to change |
 | `delete_task` | `taskId` |
+| `list_teams` | *(none)* |
+| `create_team` | `name` |
+| `add_team_member` | `teamId`, `email` |
+| `list_tickets` | `projectId?`, `teamId?`, `assigneeId?` (or `"unassigned"`), `status?` |
+| `create_ticket` | `projectId`, `title`, `description?`, `status?`, `priority?`, `points?`, `assigneeId?` |
+| `update_ticket` | `ticketId`, plus any field to change (`points`/`assigneeId` accept `null` to clear) |
+| `delete_ticket` | `ticketId` |
+| `list_comments` | `ticketId` |
+| `add_comment` | `ticketId`, `body` |
+| `get_weekly_stats` | `week?` (ISO date within the target week), `weeksBack?` (defaults to 1; use 4-6 for a velocity trend) |
 
 **Resources** (nouns - the AI reads these into context by URI):
 

@@ -3,6 +3,7 @@
 // functions directly, so there is exactly one implementation of
 // "how to create a project" no matter which front door was used.
 import { query } from '../db.js';
+import { isTeamMember } from './teamService.js';
 
 // Every function is scoped by userId so one user can never read or
 // modify another user's projects. The MCP server resolves a userId
@@ -22,24 +23,34 @@ export async function getProject(userId, id) {
   return rows[0] ?? null;
 }
 
-export async function createProject(userId, { name, description = '' }) {
+export async function createProject(userId, { name, description = '', teamId }) {
   if (!name || !name.trim()) {
     throw new Error('Project name is required');
   }
+  if (!teamId) {
+    throw new Error('teamId is required');
+  }
+  if (!(await isTeamMember(userId, teamId))) {
+    throw new Error('Team not found');
+  }
   const { rows } = await query(
-    'INSERT INTO projects (user_id, name, description) VALUES ($1, $2, $3) RETURNING *',
-    [userId, name.trim(), description]
+    'INSERT INTO projects (user_id, name, description, team_id) VALUES ($1, $2, $3, $4) RETURNING *',
+    [userId, name.trim(), description, teamId]
   );
   return rows[0];
 }
 
-export async function updateProject(userId, id, { name, description }) {
+export async function updateProject(userId, id, { name, description, teamId }) {
   const existing = await getProject(userId, id);
   if (!existing) return null;
 
+  if (teamId !== undefined && !(await isTeamMember(userId, teamId))) {
+    throw new Error('Team not found');
+  }
+
   const { rows } = await query(
-    'UPDATE projects SET name = $1, description = $2 WHERE id = $3 AND user_id = $4 RETURNING *',
-    [name ?? existing.name, description ?? existing.description, id, userId]
+    'UPDATE projects SET name = $1, description = $2, team_id = $3 WHERE id = $4 AND user_id = $5 RETURNING *',
+    [name ?? existing.name, description ?? existing.description, teamId ?? existing.team_id, id, userId]
   );
   return rows[0];
 }

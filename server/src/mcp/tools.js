@@ -6,6 +6,10 @@
 import { z } from 'zod';
 import * as projectService from '../services/projectService.js';
 import * as taskService from '../services/taskService.js';
+import * as teamService from '../services/teamService.js';
+import * as ticketService from '../services/ticketService.js';
+import * as commentService from '../services/commentService.js';
+import * as statsService from '../services/statsService.js';
 import { resolveUserId } from './context.js';
 
 function textResult(data) {
@@ -14,6 +18,8 @@ function textResult(data) {
 
 const statusEnum = z.enum(['todo', 'in_progress', 'done']);
 const priorityEnum = z.enum(['low', 'medium', 'high']);
+const ticketStatusEnum = z.enum(ticketService.STATUSES);
+const pointsEnum = z.union(ticketService.POINTS.map((p) => z.literal(p)));
 
 export function registerTools(server) {
   server.registerTool(
@@ -150,6 +156,183 @@ export function registerTools(server) {
       const deleted = await taskService.deleteTask(userId, taskId);
       if (!deleted) throw new Error(`Task ${taskId} not found`);
       return textResult({ deleted: true, taskId });
+    }
+  );
+
+  server.registerTool(
+    'list_teams',
+    {
+      title: 'List Teams',
+      description: 'List every team you are a member of.',
+      inputSchema: {},
+    },
+    async () => {
+      const userId = await resolveUserId();
+      return textResult(await teamService.listTeams(userId));
+    }
+  );
+
+  server.registerTool(
+    'create_team',
+    {
+      title: 'Create Team',
+      description: 'Create a new team. You become its first member.',
+      inputSchema: {
+        name: z.string().describe('Team name'),
+      },
+    },
+    async ({ name }) => {
+      const userId = await resolveUserId();
+      return textResult(await teamService.createTeam(userId, { name }));
+    }
+  );
+
+  server.registerTool(
+    'add_team_member',
+    {
+      title: 'Add Team Member',
+      description: "Add a user to a team by email. You must already be a member of the team. The user must have signed into the web app at least once.",
+      inputSchema: {
+        teamId: z.number().describe('ID of the team to add a member to'),
+        email: z.string().describe('Email of the user to add'),
+      },
+    },
+    async ({ teamId, email }) => {
+      const userId = await resolveUserId();
+      return textResult(await teamService.addTeamMember(userId, teamId, { email }));
+    }
+  );
+
+  server.registerTool(
+    'list_tickets',
+    {
+      title: 'List Tickets',
+      description: 'List tickets across your teams, optionally filtered by project, team, assignee, and/or status.',
+      inputSchema: {
+        projectId: z.number().optional().describe('Only tickets in this project'),
+        teamId: z.number().optional().describe('Only tickets on this team'),
+        assigneeId: z
+          .union([z.number(), z.literal('unassigned')])
+          .optional()
+          .describe('Only tickets assigned to this user id, or "unassigned"'),
+        status: ticketStatusEnum.optional().describe('Only tickets with this status'),
+      },
+    },
+    async ({ projectId, teamId, assigneeId, status }) => {
+      const userId = await resolveUserId();
+      return textResult(await ticketService.listTickets(userId, { projectId, teamId, assigneeId, status }));
+    }
+  );
+
+  server.registerTool(
+    'create_ticket',
+    {
+      title: 'Create Ticket',
+      description: "Create a new ticket inside a project. The project must belong to one of your teams.",
+      inputSchema: {
+        projectId: z.number().describe('ID of the project this ticket belongs to'),
+        title: z.string().describe('Ticket title'),
+        description: z.string().optional().describe('Markdown description'),
+        status: ticketStatusEnum.optional().describe('Defaults to backlog'),
+        priority: priorityEnum.optional().describe('Defaults to medium'),
+        points: pointsEnum.optional().describe('Story-point estimate: 1, 2, 3, 5, 8, or 13'),
+        assigneeId: z.number().optional().describe('User id to assign, must be a member of the ticket\'s team'),
+      },
+    },
+    async (args) => {
+      const userId = await resolveUserId();
+      return textResult(await ticketService.createTicket(userId, args));
+    }
+  );
+
+  server.registerTool(
+    'update_ticket',
+    {
+      title: 'Update Ticket',
+      description: 'Update any fields on an existing ticket, e.g. change its status, assignee, points, or description.',
+      inputSchema: {
+        ticketId: z.number().describe('ID of the ticket to update'),
+        title: z.string().optional(),
+        description: z.string().optional().describe('Markdown description'),
+        status: ticketStatusEnum.optional(),
+        priority: priorityEnum.optional(),
+        points: pointsEnum.nullable().optional().describe('Story-point estimate, or null to clear'),
+        assigneeId: z.number().nullable().optional().describe('User id to assign, or null to unassign'),
+      },
+    },
+    async ({ ticketId, ...fields }) => {
+      const userId = await resolveUserId();
+      const ticket = await ticketService.updateTicket(userId, ticketId, fields);
+      if (!ticket) throw new Error(`Ticket ${ticketId} not found`);
+      return textResult(ticket);
+    }
+  );
+
+  server.registerTool(
+    'delete_ticket',
+    {
+      title: 'Delete Ticket',
+      description: 'Delete a ticket.',
+      inputSchema: { ticketId: z.number() },
+    },
+    async ({ ticketId }) => {
+      const userId = await resolveUserId();
+      const deleted = await ticketService.deleteTicket(userId, ticketId);
+      if (!deleted) throw new Error(`Ticket ${ticketId} not found`);
+      return textResult({ deleted: true, ticketId });
+    }
+  );
+
+  server.registerTool(
+    'list_comments',
+    {
+      title: 'List Comments',
+      description: 'List every comment on a ticket, oldest first.',
+      inputSchema: { ticketId: z.number() },
+    },
+    async ({ ticketId }) => {
+      const userId = await resolveUserId();
+      return textResult(await commentService.listComments(userId, ticketId));
+    }
+  );
+
+  server.registerTool(
+    'add_comment',
+    {
+      title: 'Add Comment',
+      description: 'Add a markdown comment to a ticket.',
+      inputSchema: {
+        ticketId: z.number().describe('ID of the ticket to comment on'),
+        body: z.string().describe('Comment body (markdown)'),
+      },
+    },
+    async ({ ticketId, body }) => {
+      const userId = await resolveUserId();
+      return textResult(await commentService.addComment(userId, ticketId, { body }));
+    }
+  );
+
+  server.registerTool(
+    'get_weekly_stats',
+    {
+      title: 'Get Weekly Stats',
+      description:
+        'Tickets and points completed per week, broken down by team and assignee, across your teams. ' +
+        '"Completed" is based on when a ticket was (most recently) moved to done in that week, not its ' +
+        'current status, so past weeks stay accurate even if the ticket changes status again later.',
+      inputSchema: {
+        week: z.string().optional().describe('Any ISO date within the target week, e.g. 2026-08-06. Defaults to the current week.'),
+        weeksBack: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe('How many weeks to return, ending at `week`. Defaults to 1. Use 4-6 for a velocity trend.'),
+      },
+    },
+    async ({ week, weeksBack }) => {
+      const userId = await resolveUserId();
+      return textResult(await statsService.getWeeklyStats(userId, { week, weeksBack }));
     }
   );
 }

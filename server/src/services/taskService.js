@@ -8,6 +8,7 @@
 // normalized and makes it impossible to read or edit a task that
 // belongs to someone else's project.
 import { query } from '../db.js';
+import { recordStatusChange } from './ticketService.js';
 
 const STATUSES = ['todo', 'in_progress', 'done'];
 const PRIORITIES = ['low', 'medium', 'high'];
@@ -81,7 +82,13 @@ export async function createTask(userId, { projectId, title, description = '', s
      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
     [projectId, title.trim(), description, status, priority, dueDate, assignee]
   );
-  return rows[0];
+  const task = rows[0];
+  // Shares ticket_status_history with ticketService.js (same underlying
+  // rows), so weekly completion stats stay accurate no matter which
+  // tool - the legacy create_task/update_task or the newer
+  // create_ticket/update_ticket - changed a ticket's status.
+  await recordStatusChange(task.id, null, task.status);
+  return task;
 }
 
 export async function updateTask(userId, id, fields) {
@@ -110,7 +117,11 @@ export async function updateTask(userId, id, fields) {
      WHERE id = $7 RETURNING *`,
     [merged.title, merged.description, merged.status, merged.priority, merged.due_date, merged.assignee, id]
   );
-  return rows[0];
+  const task = rows[0];
+  if (merged.status !== existing.status) {
+    await recordStatusChange(task.id, existing.status, merged.status);
+  }
+  return task;
 }
 
 export async function deleteTask(userId, id) {
