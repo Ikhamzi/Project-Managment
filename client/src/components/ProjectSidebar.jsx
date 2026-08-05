@@ -1,79 +1,179 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
+import TeamMembersModal from './TeamMembersModal.jsx';
 
-export default function ProjectSidebar({ projects, selectedProjectId, onSelect, onProjectsChange }) {
+export default function ProjectSidebar({
+  teams,
+  selectedTeamId,
+  onSelectTeam,
+  onTeamsChange,
+  projects,
+  selectedProjectId,
+  onSelectProject,
+  onProjectsChange,
+}) {
   const { api } = useApp();
-  const [name, setName] = useState('');
+  const [teamName, setTeamName] = useState('');
+  const [creatingTeam, setCreatingTeam] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
+  const [projectName, setProjectName] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  async function handleCreate(e) {
+  const selectedTeam = teams.find((t) => t.id === selectedTeamId) ?? null;
+
+  async function handleCreateTeam(e) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!teamName.trim()) return;
     setSubmitting(true);
     try {
-      const project = await api.createProject({ name: name.trim() });
-      setName('');
-      await onProjectsChange();
-      onSelect(project.id);
+      const team = await api.createTeam({ name: teamName.trim() });
+      setTeamName('');
+      setCreatingTeam(false);
+      await onTeamsChange();
+      onSelectTeam(team.id);
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this project and all its tasks?')) return;
+  async function handleCreateProject(e) {
+    e.preventDefault();
+    if (!projectName.trim() || !selectedTeamId) return;
+    setSubmitting(true);
+    try {
+      const project = await api.createProject({ name: projectName.trim(), teamId: selectedTeamId });
+      setProjectName('');
+      await onProjectsChange();
+      onSelectProject(project.id);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDeleteProject(id) {
+    if (!confirm('Delete this project and all its tickets?')) return;
     await api.deleteProject(id);
     await onProjectsChange();
-    if (id === selectedProjectId) onSelect(null);
+    if (id === selectedProjectId) onSelectProject(null);
   }
 
   return (
-    <aside className="w-64 shrink-0 border-r border-slate-200 bg-white p-4">
-      <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Projects</h2>
-      <ul className="mb-4 space-y-1">
-        {projects.map((project) => (
-          <li key={project.id}>
-            <button
-              onClick={() => onSelect(project.id)}
-              className={`group flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${
-                project.id === selectedProjectId ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              <span className="truncate">{project.name}</span>
-              <span
-                role="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(project.id);
-                }}
-                className={`ml-2 shrink-0 opacity-0 group-hover:opacity-100 ${
-                  project.id === selectedProjectId ? 'text-slate-300 hover:text-white' : 'text-slate-400 hover:text-red-500'
-                }`}
-                title="Delete project"
-              >
-                ✕
-              </span>
-            </button>
-          </li>
-        ))}
-        {projects.length === 0 && <li className="px-3 py-2 text-sm text-slate-400">No projects yet</li>}
-      </ul>
+    <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
+      <div className="border-b border-slate-100 p-4">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Team</h2>
 
-      <form onSubmit={handleCreate} className="flex gap-2">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="New project"
-          className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
-        />
-        <button
-          type="submit"
-          disabled={submitting || !name.trim()}
-          className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white disabled:opacity-40"
-        >
-          Add
-        </button>
-      </form>
+        {teams.length > 0 && (
+          <div className="mb-2 flex items-center gap-1.5">
+            <select
+              value={selectedTeamId ?? ''}
+              onChange={(e) => onSelectTeam(Number(e.target.value))}
+              className="min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm font-medium text-slate-800 focus:border-slate-500 focus:outline-none"
+            >
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => setShowMembers(true)}
+              title="Team members"
+              className="shrink-0 rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-500 hover:bg-slate-100"
+            >
+              👥
+            </button>
+          </div>
+        )}
+
+        {creatingTeam ? (
+          <form onSubmit={handleCreateTeam} className="flex gap-1.5">
+            <input
+              autoFocus
+              value={teamName}
+              onChange={(e) => setTeamName(e.target.value)}
+              placeholder="Team name"
+              className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={submitting || !teamName.trim()}
+              className="shrink-0 rounded-md bg-slate-900 px-2.5 py-1.5 text-sm text-white disabled:opacity-40"
+            >
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => setCreatingTeam(false)}
+              className="shrink-0 rounded-md border border-slate-300 px-2.5 py-1.5 text-sm text-slate-600"
+            >
+              ✕
+            </button>
+          </form>
+        ) : (
+          <button
+            onClick={() => setCreatingTeam(true)}
+            className="w-full rounded-md border border-dashed border-slate-300 px-2 py-1.5 text-xs text-slate-500 hover:border-slate-400 hover:text-slate-700"
+          >
+            + New team
+          </button>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Projects</h2>
+        <ul className="mb-4 space-y-1">
+          {projects.map((project) => (
+            <li key={project.id}>
+              <button
+                onClick={() => onSelectProject(project.id)}
+                className={`group flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${
+                  project.id === selectedProjectId ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <span className="truncate">{project.name}</span>
+                <span
+                  role="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteProject(project.id);
+                  }}
+                  className={`ml-2 shrink-0 opacity-0 group-hover:opacity-100 ${
+                    project.id === selectedProjectId ? 'text-slate-300 hover:text-white' : 'text-slate-400 hover:text-red-500'
+                  }`}
+                  title="Delete project"
+                >
+                  ✕
+                </span>
+              </button>
+            </li>
+          ))}
+          {projects.length === 0 && (
+            <li className="px-3 py-2 text-sm text-slate-400">
+              {selectedTeam ? 'No projects on this team yet' : 'Create a team to get started'}
+            </li>
+          )}
+        </ul>
+
+        {selectedTeam && (
+          <form onSubmit={handleCreateProject} className="flex gap-2">
+            <input
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              placeholder="New project"
+              className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={submitting || !projectName.trim()}
+              className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white disabled:opacity-40"
+            >
+              Add
+            </button>
+          </form>
+        )}
+      </div>
+
+      {showMembers && selectedTeam && <TeamMembersModal team={selectedTeam} onClose={() => setShowMembers(false)} />}
     </aside>
   );
 }
