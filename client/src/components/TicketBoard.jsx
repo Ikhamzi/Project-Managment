@@ -44,29 +44,37 @@ export default function TicketBoard({ project, team }) {
       {loading ? (
         <p className="mt-6 text-slate-400">Loading tickets…</p>
       ) : (
-        <div className="mt-6 flex gap-4 overflow-x-auto pb-2">
+        // Sections stack top-to-bottom in workflow order (see
+        // ticketMeta.js's STATUSES), so a status change always reads as
+        // the ticket moving down the page when it progresses and up
+        // when it's moved back - no columns, no horizontal scrolling,
+        // which is also what makes this work on a phone screen.
+        <div className="mt-6 space-y-5">
           {STATUSES.map((col) => {
             const colTickets = tickets.filter((t) => t.status === col.key);
             return (
-              <div key={col.key} className="w-72 shrink-0 rounded-lg bg-slate-50 p-3">
+              <section key={col.key} className="rounded-lg bg-slate-50 p-3 md:p-4">
                 <h3 className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <span className={`h-1.5 w-1.5 rounded-full ${col.dot}`} />
                   {col.label}
                   <span className="font-normal normal-case text-slate-400">{colTickets.length}</span>
                 </h3>
-                <div className="space-y-2">
-                  {colTickets.map((ticket) => (
-                    <TicketCard
-                      key={ticket.id}
-                      ticket={ticket}
-                      members={members}
-                      onChanged={loadTickets}
-                      onOpen={(t) => setOpenTicketId(t.id)}
-                    />
-                  ))}
-                  {colTickets.length === 0 && <p className="px-1 py-2 text-xs text-slate-300">No tickets</p>}
-                </div>
-              </div>
+                {colTickets.length === 0 ? (
+                  <p className="px-1 py-2 text-xs text-slate-300">No tickets</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {colTickets.map((ticket) => (
+                      <TicketCard
+                        key={ticket.id}
+                        ticket={ticket}
+                        members={members}
+                        onChanged={loadTickets}
+                        onOpen={(t) => setOpenTicketId(t.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
             );
           })}
         </div>

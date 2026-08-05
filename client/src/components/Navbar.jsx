@@ -4,15 +4,21 @@ import { Link, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import McpAccessModal from './McpAccessModal.jsx';
 
+// Two layouts in one header, toggled with Tailwind's `md:` breakpoint
+// rather than JS - full branding + nav links + account actions on
+// desktop; just a name and a hamburger on mobile, since there isn't
+// room for all of that in a slim mobile bar. The hamburger opens
+// MobileMenu.jsx (rendered at the App level), which carries the rest:
+// nav links, the team/project switcher, and account actions.
 export default function Navbar() {
-  const { user, demoMode, signInWithGoogle, signOut, exitDemo } = useApp();
+  const { user, demoMode, signInWithGoogle, signOut, exitDemo, toggleMobileMenu } = useApp();
   const [mcpOpen, setMcpOpen] = useState(false);
   const location = useLocation();
   const showNav = Boolean(user) || demoMode;
 
   return (
-    <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3">
-      <div className="flex items-center gap-2">
+    <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:px-6">
+      <div className="hidden items-center gap-2 md:flex">
         <span className="text-xl">📋</span>
         <span className="font-semibold text-slate-800">Task Manager</span>
         {demoMode && (
@@ -38,7 +44,18 @@ export default function Navbar() {
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:hidden">
+        {showNav ? (
+          <span className="font-medium text-slate-800">{user?.name ?? 'Demo'}</span>
+        ) : (
+          <>
+            <span className="text-xl">📋</span>
+            <span className="font-semibold text-slate-800">Task Manager</span>
+          </>
+        )}
+      </div>
+
+      <div className="hidden items-center gap-3 md:flex">
         {user ? (
           <>
             <span className="text-sm font-medium text-slate-700">{user.name}</span>
@@ -73,6 +90,25 @@ export default function Navbar() {
               text="signin"
             />
           </>
+        )}
+      </div>
+
+      <div className="md:hidden">
+        {showNav ? (
+          <button
+            onClick={toggleMobileMenu}
+            aria-label="Open menu"
+            className="rounded-md border border-slate-300 p-2 text-lg leading-none text-slate-600 hover:bg-slate-100"
+          >
+            ☰
+          </button>
+        ) : (
+          <GoogleLogin
+            onSuccess={(res) => signInWithGoogle(res.credential)}
+            onError={() => console.error('Google sign-in failed')}
+            size="medium"
+            text="signin"
+          />
         )}
       </div>
     </header>

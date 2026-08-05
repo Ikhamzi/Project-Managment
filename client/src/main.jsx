@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import './index.css';
 import App from './App.jsx';
 import { AppProvider } from './context/AppContext.jsx';
+import { WorkspaceProvider } from './context/WorkspaceContext.jsx';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')).render(
     <GoogleOAuthProvider clientId={googleClientId}>
       <BrowserRouter>
         <AppProvider>
-          <App />
+          <WorkspaceProvider>
+            <App />
+          </WorkspaceProvider>
         </AppProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>

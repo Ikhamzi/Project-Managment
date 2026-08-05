@@ -58,13 +58,13 @@ export default function StatsPage() {
   const pointsDelta = previous ? current.pointsCompleted - previous.pointsCompleted : null;
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
+    <div className="mx-auto max-w-4xl p-4 md:p-6">
       <h1 className="mb-1 text-xl font-bold text-slate-900">Weekly stats</h1>
       <p className="mb-6 text-sm text-slate-500">
         {formatRange(current)} · across every team you're a member of
       </p>
 
-      <div className="mb-8 grid grid-cols-2 gap-4">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <StatTile label="Tickets completed this week" value={current.ticketsCompleted} delta={ticketsDelta} />
         <StatTile label="Points completed this week" value={current.pointsCompleted} delta={pointsDelta} />
       </div>

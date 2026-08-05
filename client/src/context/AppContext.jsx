@@ -8,6 +8,13 @@ export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [demoMode, setDemoMode] = useState(false);
+  // The off-canvas drawer that holds the sidebar + nav on narrow
+  // screens (see MobileMenu.jsx) - lives here rather than in Navbar
+  // since the hamburger button that opens it and the drawer itself are
+  // rendered by different components.
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const toggleMobileMenu = useCallback(() => setMobileMenuOpen((v) => !v), []);
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
 
   useEffect(() => {
     fetch('/api/auth/me', { credentials: 'include' })
@@ -41,8 +48,20 @@ export function AppProvider({ children }) {
   const api = demoMode ? demoApi : realApi;
 
   const value = useMemo(
-    () => ({ user, authLoading, demoMode, signInWithGoogle, signOut, startDemo, exitDemo, api }),
-    [user, authLoading, demoMode, signInWithGoogle, signOut, startDemo, exitDemo, api]
+    () => ({
+      user,
+      authLoading,
+      demoMode,
+      signInWithGoogle,
+      signOut,
+      startDemo,
+      exitDemo,
+      api,
+      mobileMenuOpen,
+      toggleMobileMenu,
+      closeMobileMenu,
+    }),
+    [user, authLoading, demoMode, signInWithGoogle, signOut, startDemo, exitDemo, api, mobileMenuOpen, toggleMobileMenu, closeMobileMenu]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

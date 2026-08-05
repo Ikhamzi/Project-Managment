@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { useApp } from './context/AppContext.jsx';
 import Navbar from './components/Navbar.jsx';
+import MobileMenu from './components/MobileMenu.jsx';
 import Welcome from './pages/Welcome.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import StatsPage from './pages/StatsPage.jsx';
@@ -23,6 +24,7 @@ export default function App() {
             ) : (
               <>
                 <Navbar />
+                <MobileMenu />
                 {Boolean(user) || demoMode ? (
                   <Routes>
                     <Route path="/stats" element={<StatsPage />} />
