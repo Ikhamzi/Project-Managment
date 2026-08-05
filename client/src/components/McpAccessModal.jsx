@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext.jsx';
 const MCP_URL = `${window.location.origin}/mcp`;
 
 function cliCommand(token) {
-  return `claude mcp add --transport http task-manager ${MCP_URL} --header "Authorization: Bearer ${token}"`;
+  return `claude mcp add --transport http project-manager ${MCP_URL} --header "Authorization: Bearer ${token}"`;
 }
 
 export default function McpAccessModal({ onClose }) {

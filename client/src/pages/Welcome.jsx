@@ -7,7 +7,7 @@ export default function Welcome() {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-6 px-6 py-24 text-center">
       <span className="text-4xl">📋</span>
-      <h1 className="text-2xl font-bold text-slate-900">Task Manager</h1>
+      <h1 className="text-2xl font-bold text-slate-900">Project Manager</h1>
       <p className="text-slate-500">
         Simple project &amp; task tracking, plus an MCP server so an AI assistant can manage the same
         projects and tasks directly.

@@ -36,7 +36,7 @@ export default function MobileMenu() {
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
           <span className="flex items-center gap-2 font-semibold text-slate-800">
-            <span className="text-xl">📋</span> Task Manager
+            <span className="text-xl">📋</span> Project Manager
           </span>
           <button onClick={closeMobileMenu} aria-label="Close menu" className="text-slate-400 hover:text-slate-600">
             ✕

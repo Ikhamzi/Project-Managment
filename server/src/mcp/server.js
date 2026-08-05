@@ -7,7 +7,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { registerTools } from './tools.js';
 import { registerResources } from './resources.js';
 
-const server = new McpServer({ name: 'task-manager-mcp', version: '1.0.0' });
+const server = new McpServer({ name: 'project-manager-mcp', version: '1.0.0' });
 
 registerTools(server);
 registerResources(server);

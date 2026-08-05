@@ -41,7 +41,7 @@ mcpRouter.use(
 mcpRouter.post('/', async (req, res) => {
   const userId = req.auth.extra.userId;
   await httpUserContext.run(userId, async () => {
-    const server = new McpServer({ name: 'task-manager-mcp', version: '1.0.0' });
+    const server = new McpServer({ name: 'project-manager-mcp', version: '1.0.0' });
     registerTools(server);
     registerResources(server);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });

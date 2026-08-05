@@ -20,7 +20,7 @@ export default function Navbar() {
     <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:px-6">
       <div className="hidden items-center gap-2 md:flex">
         <span className="text-xl">📋</span>
-        <span className="font-semibold text-slate-800">Task Manager</span>
+        <span className="font-semibold text-slate-800">Project Manager</span>
         {demoMode && (
           <span className="ml-2 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
             Demo mode — nothing is saved
@@ -56,7 +56,7 @@ export default function Navbar() {
         ) : (
           <>
             <span className="text-xl">📋</span>
-            <span className="font-semibold text-slate-800">Task Manager</span>
+            <span className="font-semibold text-slate-800">Project Manager</span>
           </>
         )}
       </div>

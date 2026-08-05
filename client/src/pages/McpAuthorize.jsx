@@ -43,7 +43,7 @@ export default function McpAuthorize() {
   if (!user) {
     return (
       <Centered>
-        <p className="mb-4 text-slate-600">Sign in to authorize this app to access your Task Manager account.</p>
+        <p className="mb-4 text-slate-600">Sign in to authorize this app to access your Project Manager account.</p>
         <GoogleLogin onSuccess={(res) => signInWithGoogle(res.credential)} onError={() => setError('Sign-in failed')} />
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
       </Centered>

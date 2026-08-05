@@ -49,7 +49,7 @@ app.use(
     provider: taskManagerOAuthProvider,
     issuerUrl: publicUrl,
     resourceServerUrl: new URL('/mcp', publicUrl),
-    resourceName: 'Task Manager',
+    resourceName: 'Project Manager',
   })
 );
 

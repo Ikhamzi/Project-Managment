@@ -1,4 +1,4 @@
-# Task Manager (with an MCP server)
+# Project Manager (with an MCP server)
 
 A small project & task manager - the kind of app that normally has one front door
 (a browser talking to a REST API). This one has two: the same React app you'd
@@ -241,7 +241,7 @@ Code's CLI), skip the OAuth dance and use a personal access token directly:
 2. Register it with your client:
 
    ```bash
-   claude mcp add --transport http task-manager https://<your-deployment>/mcp \
+   claude mcp add --transport http project-manager https://<your-deployment>/mcp \
      --header "Authorization: Bearer <token>"
    ```
 
@@ -261,7 +261,7 @@ the `users` row).
 ```json
 {
   "mcpServers": {
-    "task-manager": {
+    "project-manager": {
       "command": "node",
       "args": ["/absolute/path/to/server/src/mcp/server.js"],
       "env": {
@@ -276,7 +276,7 @@ the `users` row).
 **Claude Code** - from the `server/` directory:
 
 ```bash
-claude mcp add task-manager --env DATABASE_URL=postgresql://taskapp:taskapp@localhost:5433/taskapp --env MCP_USER_EMAIL=you@example.com -- node src/mcp/server.js
+claude mcp add project-manager --env DATABASE_URL=postgresql://taskapp:taskapp@localhost:5433/taskapp --env MCP_USER_EMAIL=you@example.com -- node src/mcp/server.js
 ```
 
 Restart your MCP client, and try something like *"list my projects"* or
@@ -366,15 +366,15 @@ so Render can set up both services for you automatically.
 1. Push this repo to GitHub.
 2. In the [Render dashboard](https://dashboard.render.com/): **New → Blueprint**,
    connect the repo. Render reads `render.yaml` and shows you a web service
-   (`task-manager`, built from the root `Dockerfile`) and a database
-   (`task-manager-db`). Click **Apply**.
+   (`project-manager`, built from the root `Dockerfile`) and a database
+   (`project-manager-db`). Click **Apply**.
 3. The database's connection string is wired into the web service
    automatically (`DATABASE_URL`), and `JWT_SECRET` is generated for you.
 4. You still need to set two values by hand (Render dashboard →
-   `task-manager` → **Environment**), since they come from your own Google
+   `project-manager` → **Environment**), since they come from your own Google
    Cloud project: `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID` (same value,
    the Client ID from the [Google sign-in setup](#google-sign-in-setup)
-   section). Add your Render URL (`https://task-manager-xxxx.onrender.com`)
+   section). Add your Render URL (`https://project-manager-xxxx.onrender.com`)
    to that OAuth client's **Authorized JavaScript origins** in Google Cloud
    Console.
 5. `VITE_GOOGLE_CLIENT_ID` is baked into the frontend at build time, so after
