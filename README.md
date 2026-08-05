@@ -170,15 +170,31 @@ backend verifies once and turns into its own session cookie.
 
 ## Using the MCP server
 
-There are two ways to connect an AI client - local (stdio) against your own
-Postgres, or remote (HTTPS) against a deployed instance using a personal
-token. Both call the exact same tools/resources over the same service layer.
+There are three ways to connect an AI client - two remote (HTTPS, against a
+deployed instance), one local (stdio, against your own Postgres). All three
+call the exact same tools/resources over the same service layer.
 
-### Remote (HTTPS) - any signed-up user, no server config
+### Remote, OAuth - Claude Desktop, claude.ai, "Add custom connector" UIs
 
-The deployed app exposes the MCP server at `POST /mcp`, authenticated per
-request with a personal access token instead of a shared secret - so anyone
-who signs up gets their own token and only ever sees their own data.
+The deployed app is a full OAuth 2.1 authorization server for its own MCP
+endpoint (Dynamic Client Registration + Authorization Code + PKCE, see
+`server/src/mcp/oauthProvider.js`). Client UIs that only take a URL (no field
+for a raw token) use this automatically:
+
+1. In Claude Desktop/claude.ai, add a custom connector with just the URL:
+   `https://<your-deployment>/mcp`.
+2. It opens your browser to sign in (if needed) and approve access - same
+   Google account as the web app.
+3. Done. No token to copy, no client ID/secret to fill in.
+
+The token this issues under the hood is a normal personal access token (see
+below) - it'll show up in, and can be revoked from, the same **MCP access**
+panel.
+
+### Remote, personal token - Claude Code, or any client with a header field
+
+For clients that let you pass a static `Authorization` header (like Claude
+Code's CLI), skip the OAuth dance and use a personal access token directly:
 
 1. Sign in to the web app, click **MCP access** in the navbar, and generate a
    token (shown once - copy it).
@@ -187,20 +203,6 @@ who signs up gets their own token and only ever sees their own data.
    ```bash
    claude mcp add --transport http task-manager https://<your-deployment>/mcp \
      --header "Authorization: Bearer <token>"
-   ```
-
-   **Claude Desktop** - add to `claude_desktop_config.json`:
-
-   ```json
-   {
-     "mcpServers": {
-       "task-manager": {
-         "type": "http",
-         "url": "https://<your-deployment>/mcp",
-         "headers": { "Authorization": "Bearer <token>" }
-       }
-     }
-   }
    ```
 
 Revoke a token any time from the same **MCP access** panel.
@@ -336,4 +338,5 @@ static site or extra configuration to wire together.
 | `GOOGLE_CLIENT_ID` | server | Google OAuth Client ID, used to verify sign-in tokens. |
 | `MCP_USER_EMAIL` | server (local stdio MCP only) | Which user's data the local MCP server operates on. Not used by the remote `/mcp` HTTP route - that authenticates per request with a personal token instead (see "Using the MCP server"). |
 | `NODE_ENV` | server | Set to `production` to make Express serve the built client (done automatically in Docker/Render). |
+| `PUBLIC_URL` | server | Externally-reachable base URL, used as the OAuth issuer for the remote MCP server. Defaults to Render's own `RENDER_EXTERNAL_URL` (set automatically there) or `http://localhost:$PORT`; only set explicitly on other hosts. |
 | `VITE_GOOGLE_CLIENT_ID` | client | Same Google OAuth Client ID, used to render the sign-in button. |

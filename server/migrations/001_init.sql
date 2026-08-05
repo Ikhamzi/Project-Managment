@@ -53,3 +53,21 @@ CREATE TABLE IF NOT EXISTS mcp_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS idx_mcp_tokens_user_id ON mcp_tokens(user_id);
+
+-- OAuth clients dynamically registered against the MCP authorization
+-- server (RFC 7591), e.g. Claude Desktop/claude.ai registering
+-- themselves the first time a user adds this server as a connector.
+-- Authorization codes and pending-consent requests are short-lived
+-- (minutes) and kept in memory (see mcp/oauthProvider.js) rather than
+-- here - only the long-lived client registration needs to persist.
+CREATE TABLE IF NOT EXISTS oauth_clients (
+  client_id                   TEXT PRIMARY KEY,
+  client_secret                TEXT,
+  client_secret_expires_at     BIGINT,
+  client_name                  TEXT,
+  redirect_uris                 TEXT[] NOT NULL,
+  token_endpoint_auth_method    TEXT NOT NULL DEFAULT 'none',
+  grant_types                   TEXT[] NOT NULL DEFAULT ARRAY['authorization_code'],
+  response_types                TEXT[] NOT NULL DEFAULT ARRAY['code'],
+  created_at                    TIMESTAMPTZ NOT NULL DEFAULT now()
+);

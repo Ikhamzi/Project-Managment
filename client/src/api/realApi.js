@@ -32,4 +32,8 @@ export const realApi = {
   listMcpTokens: () => request('/mcp-tokens'),
   createMcpToken: (label) => request('/mcp-tokens', { method: 'POST', body: JSON.stringify({ label }) }),
   revokeMcpToken: (id) => request(`/mcp-tokens/${id}`, { method: 'DELETE' }),
+
+  getOAuthRequest: (requestId) => request(`/oauth/pending/${requestId}`),
+  decideOAuthRequest: (requestId, approve) =>
+    request(`/oauth/pending/${requestId}/decision`, { method: 'POST', body: JSON.stringify({ approve }) }),
 };
