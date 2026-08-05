@@ -1,0 +1,27 @@
+
+# Local development: runs Postgres in a container while you run the
+# Express server and Vite dev server directly on your machine (npm run
+# dev in server/ and client/) for fast reloads. Start it with:
+#   docker compose up -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: taskapp
+      POSTGRES_PASSWORD: taskapp
+      POSTGRES_DB: taskapp
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Runs once, automatically, the first time this volume is created.
+      - ./server/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U taskapp -d taskapp']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

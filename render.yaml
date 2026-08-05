@@ -1,0 +1,36 @@
+
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Deploys this repo as ONE web service (Docker image built from the root
+# Dockerfile, serving both the API and the built React app) plus ONE
+# managed Postgres database. In the Render dashboard: New -> Blueprint,
+# point it at this repo, and Render reads this file automatically.
+#
+# After the first deploy, run the migration once (Render dashboard ->
+# task-manager -> Shell): node src/migrate.js
+
+databases:
+  - name: task-manager-db
+    plan: free
+    databaseName: taskapp
+    user: taskapp
+
+services:
+  - type: web
+    name: task-manager
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: task-manager-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
