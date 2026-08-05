@@ -1,17 +1,12 @@
-// Applies migrations/001_init.sql against DATABASE_URL.
-// Docker's postgres image runs this file automatically on first boot;
-// this script exists so you can also run `npm run migrate` by hand
-// (e.g. against a Render-managed Postgres instance that starts empty).
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
+// Standalone entry point for `npm run migrate` - useful for running the
+// migration by hand against any DATABASE_URL. index.js runs the same
+// logic automatically on every boot, so this script isn't required for
+// deploys; it's here for manual/local use.
 import { pool } from './db.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const sql = readFileSync(path.join(__dirname, '..', 'migrations', '001_init.sql'), 'utf8');
+import { runMigrations } from './runMigrations.js';
 
 try {
-  await pool.query(sql);
+  await runMigrations();
   console.log('Migration applied successfully.');
 } catch (err) {
   console.error('Migration failed:', err.message);

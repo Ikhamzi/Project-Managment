@@ -278,11 +278,13 @@ so Render can set up both services for you automatically.
    Console.
 5. `VITE_GOOGLE_CLIENT_ID` is baked into the frontend at build time, so after
    adding it, trigger **Manual Deploy → Deploy latest commit** once.
-6. Run the migration once the service is live: **task-manager → Shell**, then:
-   ```bash
-   node src/migrate.js
-   ```
-7. Visit the service URL. Sign in, or click **Try the demo**.
+6. Visit the service URL. Sign in, or click **Try the demo**.
+
+The database tables are created automatically the first time the server
+boots (`index.js` runs the migration on startup - it's just
+`CREATE TABLE IF NOT EXISTS`, so it's safe on every restart too). No shell
+step needed, which matters on Render's free tier since it doesn't include
+shell access.
 
 That's the whole deployment - one web service, one database, no separate
 static site or extra configuration to wire together.

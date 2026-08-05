@@ -4,9 +4,8 @@
 # Dockerfile, serving both the API and the built React app) plus ONE
 # managed Postgres database. In the Render dashboard: New -> Blueprint,
 # point it at this repo, and Render reads this file automatically.
-#
-# After the first deploy, run the migration once (Render dashboard ->
-# task-manager -> Shell): node src/migrate.js
+# The server applies its own migration on every boot, so no manual step
+# is needed after the first deploy.
 
 databases:
   - name: task-manager-db

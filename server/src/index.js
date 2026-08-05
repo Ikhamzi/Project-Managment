@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.js';
 import projectRoutes from './routes/projects.js';
 import taskRoutes from './routes/tasks.js';
 import { requireAuth } from './auth.js';
+import { runMigrations } from './runMigrations.js';
 
 dotenv.config();
 
@@ -42,6 +43,8 @@ app.use((err, req, res, next) => {
 });
 
 const port = process.env.PORT || 4000;
+
+await runMigrations();
 app.listen(port, () => {
   console.log(`API listening on port ${port}`);
 });
