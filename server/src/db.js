@@ -11,8 +11,15 @@ const { Pool, types } = pg;
 // comparisons both expect the plain string form.
 types.setTypeParser(1082, (val) => val);
 
+// Render's external Postgres endpoint (the one you'd connect to from your
+// own machine, e.g. to run the MCP server against production data)
+// requires SSL; its internal endpoint and local Docker Postgres don't
+// need or support it, so only turn SSL on for non-local hosts.
+const isLocalDb = /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL || '');
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: isLocalDb ? false : { rejectUnauthorized: false },
 });
 
 export async function query(text, params) {
