@@ -46,7 +46,13 @@ export default function Navbar() {
 
       <div className="flex items-center gap-2 md:hidden">
         {showNav ? (
-          <span className="font-medium text-slate-800">{user?.name ?? 'Demo'}</span>
+          <button
+            onClick={toggleMobileMenu}
+            aria-label="Open menu"
+            className="rounded-md border border-slate-300 p-2 text-lg leading-none text-slate-600 hover:bg-slate-100"
+          >
+            ☰
+          </button>
         ) : (
           <>
             <span className="text-xl">📋</span>
@@ -95,13 +101,7 @@ export default function Navbar() {
 
       <div className="md:hidden">
         {showNav ? (
-          <button
-            onClick={toggleMobileMenu}
-            aria-label="Open menu"
-            className="rounded-md border border-slate-300 p-2 text-lg leading-none text-slate-600 hover:bg-slate-100"
-          >
-            ☰
-          </button>
+          <span className="font-medium text-slate-800">{user?.name ?? 'Demo'}</span>
         ) : (
           <GoogleLogin
             onSuccess={(res) => signInWithGoogle(res.credential)}

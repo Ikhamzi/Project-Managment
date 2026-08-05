@@ -1,15 +1,16 @@
 // The retractable panel that replaces the desktop sidebar + navbar
 // nav/account actions on narrow screens. Mounted once at the App level
 // (not inside Dashboard) so it's reachable from every page, not just
-// the board. Top: Board/Stats links + the same team/project switcher
-// the desktop sidebar shows (TeamProjectNav, shared verbatim). Bottom:
-// MCP access + Sign out (or Exit demo + sign-in for demo mode) - the
-// same account actions the desktop navbar shows in its top-right.
+// the board. Top: Board/Stats links + the project list (ProjectList,
+// shared with the desktop sidebar - team switching itself lives in its
+// own persistent bar at the top of the page, see Dashboard.jsx).
+// Bottom: MCP access + Sign out (or Exit demo + sign-in for demo mode) -
+// the same account actions the desktop navbar shows in its top-right.
 import { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { Link, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
-import TeamProjectNav from './TeamProjectNav.jsx';
+import ProjectList from './ProjectList.jsx';
 import McpAccessModal from './McpAccessModal.jsx';
 
 export default function MobileMenu() {
@@ -60,7 +61,7 @@ export default function MobileMenu() {
         </nav>
 
         <div className="min-h-0 flex-1">
-          <TeamProjectNav onNavigate={closeMobileMenu} />
+          <ProjectList onNavigate={closeMobileMenu} />
         </div>
 
         <div className="border-t border-slate-100 p-3">
