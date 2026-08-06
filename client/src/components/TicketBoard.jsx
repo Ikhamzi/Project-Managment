@@ -28,8 +28,12 @@ export default function TicketBoard({ project, team }) {
   const openTicket = tickets.find((t) => t.id === openTicketId) ?? null;
 
   return (
-    <div>
-      <div className="mb-6 flex items-start justify-between gap-4">
+    // md:h-full + md:flex-col makes the header/form below shrink-0 and
+    // gives the ticket list its own scroll pane (md:overflow-y-auto)
+    // instead of the whole page scrolling, so the navbar, sidebar, and
+    // this project header stay visible while you scroll tickets.
+    <div className="md:flex md:h-full md:min-h-0 md:flex-col">
+      <div className="mb-6 flex items-start justify-between gap-4 md:mb-4 md:shrink-0">
         <div>
           <h1 className="text-xl font-bold text-slate-900">{project.name}</h1>
           {project.description && <p className="mt-1 text-sm text-slate-500">{project.description}</p>}
@@ -39,7 +43,9 @@ export default function TicketBoard({ project, team }) {
         </span>
       </div>
 
-      <NewTicketForm projectId={project.id} members={members} onCreated={loadTickets} />
+      <div className="md:shrink-0">
+        <NewTicketForm projectId={project.id} members={members} onCreated={loadTickets} />
+      </div>
 
       {loading ? (
         <p className="mt-6 text-slate-400">Loading tickets…</p>
@@ -49,7 +55,7 @@ export default function TicketBoard({ project, team }) {
         // the ticket moving down the page when it progresses and up
         // when it's moved back - no columns, no horizontal scrolling,
         // which is also what makes this work on a phone screen.
-        <div className="mt-6 space-y-5">
+        <div className="mt-6 space-y-5 md:mt-4 md:min-h-0 md:flex-1 md:overflow-y-auto md:rounded-lg md:border md:border-slate-200 md:bg-white md:p-4 md:shadow-sm">
           {STATUSES.map((col) => {
             const colTickets = tickets.filter((t) => t.status === col.key);
             return (

@@ -7,14 +7,14 @@ export default function Dashboard() {
   const { loading, selectedTeam, selectedProject } = useWorkspace();
 
   return (
-    <div>
+    <div className="md:flex md:h-full md:flex-col">
       <div className="border-b border-slate-200 bg-white px-4 py-3 md:hidden">
         <TeamSwitcher compact />
       </div>
 
-      <div className="flex" style={{ minHeight: 'calc(100vh - 57px)' }}>
+      <div className="flex md:min-h-0 md:flex-1" style={{ minHeight: 'calc(100vh - 57px)' }}>
         <ProjectSidebar />
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-4 md:flex md:min-h-0 md:flex-col md:overflow-hidden md:p-6">
           {loading ? (
             <p className="text-slate-400">Loading…</p>
           ) : !selectedTeam ? (

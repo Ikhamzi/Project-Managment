@@ -11,7 +11,7 @@ export default function App() {
   const { user, authLoading, demoMode } = useApp();
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 md:flex md:h-screen md:flex-col md:overflow-hidden">
       <Routes>
         <Route path="/mcp-authorize" element={<McpAuthorize />} />
         <Route
@@ -25,14 +25,19 @@ export default function App() {
               <>
                 <Navbar />
                 <MobileMenu />
-                {Boolean(user) || demoMode ? (
-                  <Routes>
-                    <Route path="/stats" element={<StatsPage />} />
-                    <Route path="*" element={<Dashboard />} />
-                  </Routes>
-                ) : (
-                  <Welcome />
-                )}
+                {/* Desktop only: bounds the routed page below the navbar so it
+                    can manage its own internal scroll (see Dashboard.jsx) instead
+                    of the whole page scrolling. Mobile is untouched. */}
+                <div className="md:min-h-0 md:flex-1 md:overflow-y-auto">
+                  {Boolean(user) || demoMode ? (
+                    <Routes>
+                      <Route path="/stats" element={<StatsPage />} />
+                      <Route path="*" element={<Dashboard />} />
+                    </Routes>
+                  ) : (
+                    <Welcome />
+                  )}
+                </div>
               </>
             )
           }
